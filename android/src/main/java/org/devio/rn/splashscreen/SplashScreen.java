@@ -2,7 +2,9 @@ package org.devio.rn.splashscreen;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.graphics.Color;
 import android.os.Build;
+import android.view.View;
 import android.view.WindowManager;
 
 import java.lang.ref.WeakReference;
@@ -22,7 +24,7 @@ public class SplashScreen {
     /**
      * 打开启动屏
      */
-    public static void show(final Activity activity, final int themeResId, final boolean fullScreen) {
+    public static void show(final Activity activity, final int themeResId, final boolean fullScreen, final FullScreenMode fullScreenMode) {
         if (activity == null) return;
         mActivity = new WeakReference<Activity>(activity);
         activity.runOnUiThread(new Runnable() {
@@ -33,7 +35,15 @@ public class SplashScreen {
                     mSplashDialog.setContentView(R.layout.launch_screen);
                     mSplashDialog.setCancelable(false);
                     if (fullScreen) {
-                        setActivityAndroidP(mSplashDialog);
+                        switch (fullScreenMode) {
+                            case EXCLUDE_NAVIGATION_BAR:
+                                setFullScreenExcludingNavigationBar(mSplashDialog);
+                                break;
+                            default:
+                                setActivityAndroidP(mSplashDialog);
+                                break;
+                        }
+
                     }
                     if (!mSplashDialog.isShowing()) {
                         mSplashDialog.show();
@@ -41,6 +51,13 @@ public class SplashScreen {
                 }
             }
         });
+    }
+
+    /**
+     * 打开启动屏
+     */
+    public static void show(final Activity activity, final int themeResId, final boolean fullScreen) {
+        show(activity, themeResId, fullScreen, FullScreenMode.DEFAULT);
     }
 
     /**
@@ -101,6 +118,21 @@ public class SplashScreen {
                 WindowManager.LayoutParams lp = dialog.getWindow().getAttributes();
                 lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
                 dialog.getWindow().setAttributes(lp);
+            }
+        }
+    }
+
+    private static void setFullScreenExcludingNavigationBar(Dialog dialog) {
+        if (dialog != null && dialog.getWindow() != null) {
+            if (Build.VERSION.SDK_INT >= 19 && Build.VERSION.SDK_INT < 21) {
+                dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            }
+            if (Build.VERSION.SDK_INT >= 19 && dialog.getWindow().getDecorView() != null) {
+                dialog.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            }
+            if (Build.VERSION.SDK_INT >= 21) {
+                dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                dialog.getWindow().setStatusBarColor(Color.TRANSPARENT);
             }
         }
     }
